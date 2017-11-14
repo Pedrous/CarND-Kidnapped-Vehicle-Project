@@ -52,20 +52,25 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	normal_distribution<double> pdf_y(0, std_pos[1]);
 	normal_distribution<double> pdf_theta(0, std_pos[2]);
 	
-	if (yaw_rate == 0) {
-		for (auto& particle : particles) {
-		
-			particle.x += velocity * delta_t * cos(particle.theta) + pdf_x(generator);
-			particle.y += velocity * delta_t * sin(particle.theta) + pdf_y(generator);
-			particle.theta += pdf_theta(generator);
+	double k, x_ratio, y_ratio;
+	
+	if (yaw_rate == 0)
+		k = velocity * delta_t;
+	else
+		k = velocity/yaw_rate;
+	
+	for (auto& particle : particles) {
+		if (yaw_rate == 0) {
+			x_ratio = cos(particle.theta);
+			y_ratio = sin(particle.theta);
 		}
-	}
-	else {
-		for (auto& particle : particles) {
-			particle.x += velocity/yaw_rate * (sin(particle.theta + delta_t * yaw_rate) - sin(particle.theta)) + pdf_x(generator);
-			particle.y += velocity/yaw_rate * (cos(particle.theta) - cos(particle.theta + delta_t * yaw_rate)) + pdf_y(generator);
-			particle.theta += delta_t * yaw_rate + pdf_theta(generator);
+		else {
+			x_ratio = sin(particle.theta + delta_t * yaw_rate) - sin(particle.theta);
+			y_ratio = cos(particle.theta) - cos(particle.theta + delta_t * yaw_rate);
 		}
+		particle.x += k * x_ratio + pdf_x(generator);
+		particle.y += k * y_ratio + pdf_y(generator);
+		particle.theta += delta_t * yaw_rate + pdf_theta(generator);
 	}
 }
 
